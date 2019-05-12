@@ -66,24 +66,28 @@ bool GetHttpResponse( string url, char * &response, int &bytesRead , int prt){
 		for(int i = 5; i < url.length(); i++) tmp += url[i];
 		url = tmp; 
 	}
+	if(prt) cout<<"试图连接 - "<<url<<" ";
 //	if(url.back() == 'm' && url[url.length()-2] == 'o') url += '/'; 
 	string host, resource;
 	if(prt && ParseURL(url+"/", host, resource)) url += "/";
 	if(!ParseURL( url, host, resource )){
-		cout << "错误！不能解析URL:"<<url<<endl;
+		cout << "错误！不能解析URL"<<endl;//:"<<url<<endl;
+		if(prt) system("pause");
 		return false;
 	}
 	
 	//建立socket
 	struct hostent * hp= gethostbyname( host.c_str() );
 	if( hp==NULL ){
-		cout<< "错误！找不到主机位置:"<<url<<endl;
+		cout<< "错误！找不到主机位置"<<endl;//:"<<url<<endl;
+		if(prt) system("pause");
 		return false;
 	}
  
 	SOCKET sock = socket( AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if( sock == -1 || sock == -2 ){
 		cout << "错误！不能造火箭。"<<endl;
+		if(prt) system("pause");
 		return false;
 	}
  
@@ -98,8 +102,9 @@ bool GetHttpResponse( string url, char * &response, int &bytesRead , int prt){
  
 	//建立连接
 	if( 0!= connect( sock, (SOCKADDR*)&sa, sizeof(sa) ) ){
-		cout << "错误！无法连接到:"<< url <<endl;
+		cout << "错误！无法连接" <<endl;
 		closesocket(sock);
+		if(prt) system("pause");
 		return false;
 	};
  
@@ -110,9 +115,10 @@ bool GetHttpResponse( string url, char * &response, int &bytesRead , int prt){
 	if( SOCKET_ERROR ==send( sock, request.c_str(), request.size(), 0 ) ){
 		cout << "错误！数据发送时错误" <<endl;
 		closesocket( sock );
+		if(prt) system("pause");
 		return false;
 	}
-	if(prt) cout <<"已连接 - "<<url<<endl<<"端口：";
+	if(prt) cout <<"成功"<<endl<<"端口：";
 	
 	//接收数据
 	int m_nContentLength = DEFAULT_PAGE_BUF_SIZE;
@@ -176,6 +182,7 @@ void HTMLParse ( string & htmlResponse, vector<string> & imgurls, const string &
 			//char url[100]; //固定大小的会发生缓冲区溢出的危险
 			sscanf( pos, "%[^\"]", url);
 			string surl = url;  // 转换成string类型，可以自动释放内存
+//			cout<<"original link: "<<surl<<endl;
 //			if(surl[0] == '.') {
 //				surl[0] = '/';
 //			}
@@ -270,8 +277,12 @@ void DownLoadImg( vector<string> & imgurls, string url ){
 				continue;
 		}
 		//下载其中的内容
+		cout<<"    ";
 		if( GetHttpResponse(imgurls[i], image, byteRead, 0)){
-			cout<<"    O(∩_∩)O下载 - "<<imgurls[i]<<endl<<"    "; 
+			cout<<" O(∩_∩)O 下载了第"<<g_ImgCnt++<<"张图片"<<endl; 
+			
+			
+//			cout<<"O(∩_∩)O下载 - "<<imgurls[i]<<endl; 
 			if ( strlen(image) ==0 ) {
 				continue;
 			}
@@ -287,11 +298,15 @@ void DownLoadImg( vector<string> & imgurls, string url ){
 				ofstream ofile( foldname+imgname, ios::binary );
 				if( !ofile.is_open() )
 					continue;
-				cout <<g_ImgCnt++<< foldname+imgname<<endl;
+//				cout <<g_ImgCnt++<< foldname+imgname<<endl;
 				ofile.write( pos, byteRead- (pos-p) );
 				ofile.close();
-			} 
+			}
 			free(image);
+			return; // ！！！这会导致你至下一张。测试。 
+		}else {
+			cout<<" - "<<imgurls[i]<<endl; 
+			system("pause");
 		}
 	}
 //	cout<<"下载完成"<<endl; 
@@ -368,7 +383,7 @@ int main()
  
 	while( hrefUrl.size()!=0 ){
 		string url = hrefUrl.front();  // 从队列的最开始取出一个网址
-		cout<<"剩余"<< hrefUrl.size()<<"个网址在队列中"<<endl;
+		cout<<"剩余"<< hrefUrl.size()<<"个网址在队列中"<<endl; 
 //		cout << "队列首"<<url << endl;
 		BFS( url );					  // 遍历提取出来的那个网页，找它里面的超链接网页放入hrefUrl，下载它里面的文本，图片
 		hrefUrl.pop();                 // 遍历完之后，删除这个网址
