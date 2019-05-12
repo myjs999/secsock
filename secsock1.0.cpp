@@ -23,8 +23,7 @@ int g_ImgCnt=1;
  
  string shortname = "def", midname;
  	string urlStart = "http://www.baidu.net/";
- 	string urlhost = "http://www.baidu.com/";
-//è§£æURLï¼Œè§£æå‡ºä¸»æœºåï¼Œèµ„æºå
+//½âÎöURL£¬½âÎö³öÖ÷»úÃû£¬×ÊÔ´Ãû
 bool ParseURL( const string & url, string & host, string & resource){
 	if ( strlen(url.c_str()) > 2000 ) {
 		return false;
@@ -45,8 +44,7 @@ bool ParseURL( const string & url, string & host, string & resource){
  
  
 inline bool myfindstr(string a, string b) {
-	if(a.length() < b.length()) return 0;
-	for(int i = 0; i <= a.length() - b.length(); i++) {
+	for(int i = 0; i < a.length() - b.length(); i++) {
 		int pd = 1;
 		for(int j = i; j < i+b.length(); j++) if(a[j] != b[j-i]) {
 			pd =0 ;
@@ -56,42 +54,29 @@ inline bool myfindstr(string a, string b) {
 	}
 	return 0;
 }
-
-//ä½¿ç”¨Getè¯·æ±‚ï¼Œå¾—åˆ°å“åº”
-bool GetHttpResponse( string url, char * &response, int &bytesRead , int prt){
-	if(url[0] != 'h' || url[1] != 't' || url[2] != 't') url = "http:" + url;
-	if(url[4] == 's') {
-		string tmp;
-		for(int i = 0; i < 4; i++) tmp += url[i];
-		for(int i = 5; i < url.length(); i++) tmp += url[i];
-		url = tmp; 
-	}
-	if(prt) cout<<"è¯•å›¾è¿æ¥ - "<<url<<" ";
-//	if(url.back() == 'm' && url[url.length()-2] == 'o') url += '/'; 
+//Ê¹ÓÃGetÇëÇó£¬µÃµ½ÏìÓ¦
+bool GetHttpResponse( string url, char * &response, int &bytesRead ){
+	
 	string host, resource;
-	if(prt && ParseURL(url+"/", host, resource)) url += "/";
 	if(!ParseURL( url, host, resource )){
-		cout << "é”™è¯¯ï¼ä¸èƒ½è§£æURL"<<endl;//:"<<url<<endl;
-		if(prt) system("pause");
+		cout << "!!!!!!!!!!²»ÄÜ½âÎöURL:"<<url<<endl;
 		return false;
 	}
 	
-	//å»ºç«‹socket
+	//½¨Á¢socket
 	struct hostent * hp= gethostbyname( host.c_str() );
 	if( hp==NULL ){
-		cout<< "é”™è¯¯ï¼æ‰¾ä¸åˆ°ä¸»æœºä½ç½®"<<endl;//:"<<url<<endl;
-		if(prt) system("pause");
+		cout<< "!!!!!!!!!!ÕÒ²»µ½Ö÷»úÎ»ÖÃ:"<<url<<endl;
 		return false;
 	}
  
 	SOCKET sock = socket( AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if( sock == -1 || sock == -2 ){
-		cout << "é”™è¯¯ï¼ä¸èƒ½é€ ç«ç®­ã€‚"<<endl;
-		if(prt) system("pause");
+		cout << "²»ÄÜÔì»ğ¼ı¡£"<<endl;
 		return false;
 	}
  
-	//å»ºç«‹æœåŠ¡å™¨åœ°å€
+	//½¨Á¢·şÎñÆ÷µØÖ·
 	SOCKADDR_IN sa;
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons( 80 );
@@ -100,27 +85,25 @@ bool GetHttpResponse( string url, char * &response, int &bytesRead , int prt){
 	//sa.sin_addr.s_addr = inet_addr(hp->h_addr);
 	memcpy( &sa.sin_addr, hp->h_addr, 4 );
  
-	//å»ºç«‹è¿æ¥
+	//½¨Á¢Á¬½Ó
 	if( 0!= connect( sock, (SOCKADDR*)&sa, sizeof(sa) ) ){
-		cout << "é”™è¯¯ï¼æ— æ³•è¿æ¥" <<endl;
+		cout << "!!!!!!!!!!ÎŞ·¨Á¬½Óµ½:"<< url <<endl;
 		closesocket(sock);
-		if(prt) system("pause");
 		return false;
 	};
  
-	//å‡†å¤‡å‘é€æ•°æ®
+	//×¼±¸·¢ËÍÊı¾İ
 	string request = "GET " + resource + " HTTP/1.1\r\nHost:" + host + "\r\nConnection:Close\r\n\r\n";
  
-	//å‘é€æ•°æ®
+	//·¢ËÍÊı¾İ
 	if( SOCKET_ERROR ==send( sock, request.c_str(), request.size(), 0 ) ){
-		cout << "é”™è¯¯ï¼æ•°æ®å‘é€æ—¶é”™è¯¯" <<endl;
+		cout << "Êı¾İ·¢ËÍÊ±´íÎó" <<endl;
 		closesocket( sock );
-		if(prt) system("pause");
 		return false;
 	}
-	if(prt) cout <<"æˆåŠŸ"<<endl<<"ç«¯å£ï¼š";
+	cout <<"ÒÑÁ¬½Ó"<<url<<endl;
 	
-	//æ¥æ”¶æ•°æ®
+	//½ÓÊÕÊı¾İ
 	int m_nContentLength = DEFAULT_PAGE_BUF_SIZE;
 	char *pageBuf = (char *)malloc(m_nContentLength);
     memset(pageBuf, 0, m_nContentLength);
@@ -138,38 +121,24 @@ bool GetHttpResponse( string url, char * &response, int &bytesRead , int prt){
 		if( m_nContentLength - bytesRead<100){
 			cout << "\nRealloc memorry"<<endl;
 			m_nContentLength *=2;
-			pageBuf = (char*)realloc( pageBuf, m_nContentLength);       //é‡æ–°åˆ†é…å†…å­˜
+			pageBuf = (char*)realloc( pageBuf, m_nContentLength);       //ÖØĞÂ·ÖÅäÄÚ´æ
 		}
-		if(prt) cout << ret <<" ";
+		cout << ret <<" ";
     }
-	if(prt) cout <<endl;
+	cout <<endl;
  
     pageBuf[bytesRead] = '\0';
 	response = pageBuf;
 	closesocket( sock );
-//	cout<<"æˆåŠŸ 
+//	cout<<"³É¹¦ 
 	return true;
 	//cout<< response <<endl;
 }
-
-inline void dispurl(string& s) {
-	while(s[0] == '.') s.erase(s.begin());
-	if(s[0] != 'h' || s[1] != 't' || s[2] != 't') {
-		if(s[0] != '/') s = "/" + s;
-		s = urlhost + s;
-	}
-	if(s[4] == 's') {
-		string tmp;
-		for(int i = 0; i < 4; i++) tmp += s[i];
-		for(int i = 5; i < s.length(); i++) tmp += s[i];
-		s = tmp; 
-	}
-}
  
-//æå–æ‰€æœ‰çš„URLä»¥åŠå›¾ç‰‡URL
+//ÌáÈ¡ËùÓĞµÄURLÒÔ¼°Í¼Æ¬URL
 void HTMLParse ( string & htmlResponse, vector<string> & imgurls, const string & host ){
-	cout<<"    æ­£åœ¨è§£æ"<<endl;// - "<<host<<endl;
-	//æ‰¾æ‰€æœ‰è¿æ¥ï¼ŒåŠ å…¥queueä¸­
+//	cout<<"½âÎö¿ªÊ¼"<<endl;
+	//ÕÒËùÓĞÁ¬½Ó£¬¼ÓÈëqueueÖĞ
 	const char *p= htmlResponse.c_str();
 	char *tag="href=\"";
 	const char *pos = strstr( p, tag );
@@ -179,22 +148,17 @@ void HTMLParse ( string & htmlResponse, vector<string> & imgurls, const string &
 		const char * nextQ = strstr( pos, "\"" );
 		if( nextQ ){
 			char * url = new char[ nextQ-pos+1 ];
-			//char url[100]; //å›ºå®šå¤§å°çš„ä¼šå‘ç”Ÿç¼“å†²åŒºæº¢å‡ºçš„å±é™©
+			//char url[100]; //¹Ì¶¨´óĞ¡µÄ»á·¢Éú»º³åÇøÒç³öµÄÎ£ÏÕ
 			sscanf( pos, "%[^\"]", url);
-			string surl = url;  // è½¬æ¢æˆstringç±»å‹ï¼Œå¯ä»¥è‡ªåŠ¨é‡Šæ”¾å†…å­˜
-//			cout<<"original link: "<<surl<<endl;
-//			if(surl[0] == '.') {
-//				surl[0] = '/';
-//			}
-			dispurl(surl);
+			string surl = url;  // ×ª»»³ÉstringÀàĞÍ£¬¿ÉÒÔ×Ô¶¯ÊÍ·ÅÄÚ´æ
+			if(surl[0] == '/') surl = host + surl;
 			if( visitedUrl.find( surl ) == visitedUrl.end() ){
 				visitedUrl.insert( surl );
 				ofile << surl<<endl;
-				cout<<"    æŒ‡å‘ - "<<surl<<endl; 
 				hrefUrl.push( surl );
 			}
 			pos = strstr(pos, tag );
-			delete [] url;  // é‡Šæ”¾æ‰ç”³è¯·çš„å†…å­˜
+			delete [] url;  // ÊÍ·ÅµôÉêÇëµÄÄÚ´æ
 		}
 	}
 	ofile << endl << endl;
@@ -234,10 +198,10 @@ void HTMLParse ( string & htmlResponse, vector<string> & imgurls, const string &
 			delete [] url;
 		}
 	}
-//	cout << "è§£æå®Œæˆ"<<endl;
+//	cout << "½âÎö½áÊø"<<endl;
 }
  
-//æŠŠURLè½¬åŒ–ä¸ºæ–‡ä»¶å
+//°ÑURL×ª»¯ÎªÎÄ¼şÃû
 string ToFileName( const string &url ){
 	string fileName;
 	fileName.resize( url.size());
@@ -251,38 +215,32 @@ string ToFileName( const string &url ){
 }
  
 
-//ä¸‹è½½å›¾ç‰‡åˆ°imgæ–‡ä»¶å¤¹
+//ÏÂÔØÍ¼Æ¬µ½imgÎÄ¼ş¼Ğ
 void DownLoadImg( vector<string> & imgurls, string url ){
 //	url = "http:" +url; 
-	cout<<"    æ­£åœ¨ä¸‹è½½å›¾ç‰‡"<<endl;// - "<<url<<endl; 
-	//ç”Ÿæˆä¿å­˜è¯¥urlä¸‹å›¾ç‰‡çš„æ–‡ä»¶å¤¹
+	cout<<"ÕıÔÚÏÂÔØÍ¼Æ¬£º"<<url<<endl; 
+	//Éú³É±£´æ¸ÃurlÏÂÍ¼Æ¬µÄÎÄ¼ş¼Ğ
 	string foldname = ToFileName( url );
 	foldname = "./img"+shortname+"/"+foldname;
 //	foldname = "./img";
 	int alcre = 0;
 //	if(!CreateDirectory( foldname.c_str(),NULL ));
-//		cout << "ä¸èƒ½åˆ›å»ºç›®å½•"<< foldname<<endl;
+//		cout << "²»ÄÜ´´½¨Ä¿Â¼"<< foldname<<endl;
 	char *image;
 	int byteRead;
 	for( int i=0; i<imgurls.size(); i++){
-		//åˆ¤æ–­æ˜¯å¦ä¸ºå›¾ç‰‡ï¼Œbmpï¼Œjgpï¼Œjpegï¼Œgif 
-		dispurl(imgurls[i]);
+		//ÅĞ¶ÏÊÇ·ñÎªÍ¼Æ¬£¬bmp£¬jgp£¬jpeg£¬gif 
 		string str = imgurls[i];
 		int pos = str.find_last_of(".");
 		if( pos == string::npos )
 			continue;
 		else{
 			string ext = str.substr( pos+1, str.size()-pos-1 );
-			if( ext!="bmp"&& ext!="jpg" && ext!="jpeg"&& ext!="gif"&&ext!="png"&&ext!="swf")
+			if( ext!="bmp"&& ext!="jpg" && ext!="jpeg"&& ext!="gif"&&ext!="png")
 				continue;
 		}
-		//ä¸‹è½½å…¶ä¸­çš„å†…å®¹
-		cout<<"    ";
-		if( GetHttpResponse(imgurls[i], image, byteRead, 0)){
-			cout<<" O(âˆ©_âˆ©)O ä¸‹è½½äº†ç¬¬"<<g_ImgCnt++<<"å¼ å›¾ç‰‡"<<endl; 
-			
-			
-//			cout<<"O(âˆ©_âˆ©)Oä¸‹è½½ - "<<imgurls[i]<<endl; 
+		//ÏÂÔØÆäÖĞµÄÄÚÈİ
+		if( GetHttpResponse(imgurls[i], image, byteRead)){
 			if ( strlen(image) ==0 ) {
 				continue;
 			}
@@ -298,40 +256,29 @@ void DownLoadImg( vector<string> & imgurls, string url ){
 				ofstream ofile( foldname+imgname, ios::binary );
 				if( !ofile.is_open() )
 					continue;
-//				cout <<g_ImgCnt++<< foldname+imgname<<endl;
+				cout <<g_ImgCnt++<< foldname+imgname<<endl;
 				ofile.write( pos, byteRead- (pos-p) );
 				ofile.close();
 			}
 			free(image);
-			return; // ï¼ï¼ï¼è¿™ä¼šå¯¼è‡´ä½ è‡³ä¸‹ä¸€å¼ ã€‚æµ‹è¯•ã€‚ 
-		}else {
-			cout<<" - "<<imgurls[i]<<endl; 
-			system("pause");
 		}
 	}
-//	cout<<"ä¸‹è½½å®Œæˆ"<<endl; 
 }
  
  
  
-//å¹¿åº¦éå†
+//¹ã¶È±éÀú
 void BFS(  string  url ){
 	char * response;
 	int bytes;
-	// è·å–ç½‘é¡µçš„ç›¸åº”ï¼Œæ”¾å…¥responseä¸­ã€‚
+	// »ñÈ¡ÍøÒ³µÄÏàÓ¦£¬·ÅÈëresponseÖĞ¡£
 	if(url[0] != 'h' || url[1] != 't' || url[2] != 't') url = "http:" + url;
-	if(url[4] == 's') {
-		string tmp;
-		for(int i = 0; i < 4; i++) tmp += url[i];
-		for(int i = 5; i < url.length(); i++) tmp += url[i];
-		url = tmp; 
-	}
 	if(!myfindstr(url, midname)) {
-		cout<<"å·²ç¦»å¼€ä¸»ç«™"<<endl;
+		cout<<"ÒÑÀë¿ªÖ÷Õ¾"<<endl;
 		return; 
 	}
-	if( !GetHttpResponse( url, response, bytes, 1 ) ){
-		cout << "ç½‘é¡µæ— å“åº”"<<endl;
+	if( !GetHttpResponse( url, response, bytes ) ){
+		cout << "ÍøÒ³ÎŞÏìÓ¦"<<endl;
 		return;
 	}
 	string httpResponse=response;
@@ -339,58 +286,55 @@ void BFS(  string  url ){
 	string filename = ToFileName( url );
 	ofstream ofile( "./html/"+filename );
 	if( ofile.is_open() ){
-		// ä¿å­˜è¯¥ç½‘é¡µçš„æ–‡æœ¬å†…å®¹
+		// ±£´æ¸ÃÍøÒ³µÄÎÄ±¾ÄÚÈİ
 		ofile << httpResponse << endl;
 		ofile.close();
 	}
 	vector<string> imgurls;
-	//è§£æè¯¥ç½‘é¡µçš„æ‰€æœ‰å›¾ç‰‡é“¾æ¥ï¼Œæ”¾å…¥imgurlsé‡Œé¢
+	//½âÎö¸ÃÍøÒ³µÄËùÓĞÍ¼Æ¬Á´½Ó£¬·ÅÈëimgurlsÀïÃæ
 	HTMLParse( httpResponse,  imgurls, url );
 	
-	//ä¸‹è½½æ‰€æœ‰çš„å›¾ç‰‡èµ„æº
+	//ÏÂÔØËùÓĞµÄÍ¼Æ¬×ÊÔ´
 	DownLoadImg( imgurls, url );
 }
  
 int main()
 {
-	cout<<"è¾“å…¥shortnameã€midnameã€hostã€urlï¼Œä¸è¦ä»¥æ–œæ ç»“æŸ"<<endl;
-	
-//	cout<<"ä¾‹: google google.com http://www.google.com //www.google.com/s?w=\"myjs\""<<endl; 
-	cin >> shortname >> midname >> urlhost >> urlStart;
-	//åˆå§‹åŒ–socketï¼Œç”¨äºtcpç½‘ç»œè¿æ¥
+	cout<<"ÊäÈëshortname¡¢midnameºÍurl"<<endl;
+	cin >> shortname >> midname >> urlStart ;
+	//³õÊ¼»¯socket£¬ÓÃÓÚtcpÍøÂçÁ¬½Ó
     WSADATA wsaData;
     if( WSAStartup(MAKEWORD(2,2), &wsaData) != 0 ){
         return 0;
     }
  
-	// åˆ›å»ºæ–‡ä»¶å¤¹ï¼Œä¿å­˜å›¾ç‰‡å’Œç½‘é¡µæ–‡æœ¬æ–‡ä»¶
+	// ´´½¨ÎÄ¼ş¼Ğ£¬±£´æÍ¼Æ¬ºÍÍøÒ³ÎÄ±¾ÎÄ¼ş
 	string tmp = "./img"+shortname;
 	CreateDirectory( tmp.c_str(),0);
 	CreateDirectory("./html",0);
 	//string urlStart = "http://hao.360.cn/meinvdaohang.html";
  
-	// éå†çš„èµ·å§‹åœ°å€
+	// ±éÀúµÄÆğÊ¼µØÖ·
 	// string urlStart = "http://www.wmpic.me/tupian";
 //	string urlStart = "http://item.taobao.com/item.htm?spm=a230r.1.14.19.sBBNbz&id=36366887850&ns=1#detail";
 
 	
-	// ä½¿ç”¨å¹¿åº¦éå†
-	// æå–ç½‘é¡µä¸­çš„è¶…é“¾æ¥æ”¾å…¥hrefUrlä¸­ï¼Œæå–å›¾ç‰‡é“¾æ¥ï¼Œä¸‹è½½å›¾ç‰‡ã€‚
+	// Ê¹ÓÃ¹ã¶È±éÀú
+	// ÌáÈ¡ÍøÒ³ÖĞµÄ³¬Á´½Ó·ÅÈëhrefUrlÖĞ£¬ÌáÈ¡Í¼Æ¬Á´½Ó£¬ÏÂÔØÍ¼Æ¬¡£
 	BFS( urlStart );
  
-	// è®¿é—®è¿‡çš„ç½‘å€ä¿å­˜èµ·æ¥
+	// ·ÃÎÊ¹ıµÄÍøÖ·±£´æÆğÀ´
 	visitedUrl.insert( urlStart );
  
 	while( hrefUrl.size()!=0 ){
-		string url = hrefUrl.front();  // ä»é˜Ÿåˆ—çš„æœ€å¼€å§‹å–å‡ºä¸€ä¸ªç½‘å€
-		cout<<"å‰©ä½™"<< hrefUrl.size()<<"ä¸ªç½‘å€åœ¨é˜Ÿåˆ—ä¸­"<<endl; 
-//		cout << "é˜Ÿåˆ—é¦–"<<url << endl;
-		BFS( url );					  // éå†æå–å‡ºæ¥çš„é‚£ä¸ªç½‘é¡µï¼Œæ‰¾å®ƒé‡Œé¢çš„è¶…é“¾æ¥ç½‘é¡µæ”¾å…¥hrefUrlï¼Œä¸‹è½½å®ƒé‡Œé¢çš„æ–‡æœ¬ï¼Œå›¾ç‰‡
-		hrefUrl.pop();                 // éå†å®Œä¹‹åï¼Œåˆ é™¤è¿™ä¸ªç½‘å€
-//		cout<<"å‡ºé˜Ÿ"<<endl;
+		string url = hrefUrl.front();  // ´Ó¶ÓÁĞµÄ×î¿ªÊ¼È¡³öÒ»¸öÍøÖ·
+		cout << "¶ÓÁĞÊ×"<<url << endl;
+		BFS( url );					  // ±éÀúÌáÈ¡³öÀ´µÄÄÇ¸öÍøÒ³£¬ÕÒËüÀïÃæµÄ³¬Á´½ÓÍøÒ³·ÅÈëhrefUrl£¬ÏÂÔØËüÀïÃæµÄÎÄ±¾£¬Í¼Æ¬
+		hrefUrl.pop();                 // ±éÀúÍêÖ®ºó£¬É¾³ıÕâ¸öÍøÖ·
+//		cout<<"³ö¶Ó"<<endl;
 	}
     WSACleanup();
-    cout<<"çˆ¬å–å®Œæ¯•"<<endl;
+    cout<<"ÅÀÈ¡Íê±Ï"<<endl;
 	system("pause"); 
     return 0;
 }
