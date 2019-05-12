@@ -182,6 +182,7 @@ void HTMLParse ( string & htmlResponse, vector<string> & imgurls, const string &
 			//char url[100]; //固定大小的会发生缓冲区溢出的危险
 			sscanf( pos, "%[^\"]", url);
 			string surl = url;  // 转换成string类型，可以自动释放内存
+//			cout<<"original link: "<<surl<<endl;
 //			if(surl[0] == '.') {
 //				surl[0] = '/';
 //			}
@@ -280,7 +281,6 @@ void DownLoadImg( vector<string> & imgurls, string url ){
 		if( GetHttpResponse(imgurls[i], image, byteRead, 0)){
 			cout<<" O(∩_∩)O 下载了第"<<g_ImgCnt++<<"张图片"<<endl; 
 			
-			return; // ！！！这会导致你至下一张。测试。 
 			
 //			cout<<"O(∩_∩)O下载 - "<<imgurls[i]<<endl; 
 			if ( strlen(image) ==0 ) {
@@ -303,6 +303,7 @@ void DownLoadImg( vector<string> & imgurls, string url ){
 				ofile.close();
 			}
 			free(image);
+			return; // ！！！这会导致你至下一张。测试。 
 		}else {
 			cout<<" - "<<imgurls[i]<<endl; 
 			system("pause");
