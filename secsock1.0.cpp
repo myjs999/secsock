@@ -8,6 +8,7 @@
 #include <time.h>
 #include <queue>
 #include <set>
+#include <windows.h>
 #include<cstdlib>
  
 #pragma comment(lib, "ws2_32.lib") 
@@ -73,7 +74,7 @@ bool GetHttpResponse( string url, char * &response, int &bytesRead , int prt){
 	if(prt && ParseURL(url+"/", host, resource)) url += "/";
 	if(!ParseURL( url, host, resource )){
 		cout << "Error: URL Parsing Error"<<endl;//:"<<url<<endl;
-		if(prt) system("pause");
+//		if(prt) system("pause");
 		return false;
 	}
 	
@@ -81,14 +82,14 @@ bool GetHttpResponse( string url, char * &response, int &bytesRead , int prt){
 	struct hostent * hp= gethostbyname( host.c_str() );
 	if( hp==NULL ){
 		cout<< "Error: No Such Host"<<endl;//:"<<url<<endl;
-		if(prt) system("pause");
+//		if(prt) system("pause");
 		return false;
 	}
  
 	SOCKET sock = socket( AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if( sock == -1 || sock == -2 ){
 		cout << "错误！不能造火箭。"<<endl;
-		if(prt) system("pause");
+//		if(prt) system("pause");
 		return false;
 	}
  
@@ -105,7 +106,7 @@ bool GetHttpResponse( string url, char * &response, int &bytesRead , int prt){
 	if( 0!= connect( sock, (SOCKADDR*)&sa, sizeof(sa) ) ){
 		cout << "错误！无法连接" <<endl;
 		closesocket(sock);
-		if(prt) system("pause");
+//		if(prt) system("pause");
 		return false;
 	};
  
@@ -116,7 +117,7 @@ bool GetHttpResponse( string url, char * &response, int &bytesRead , int prt){
 	if( SOCKET_ERROR ==send( sock, request.c_str(), request.size(), 0 ) ){
 		cout << "错误！数据发送时错误" <<endl;
 		closesocket( sock );
-		if(prt) system("pause");
+//		if(prt) system("pause");
 		return false;
 	}
 	if(prt) cout <<"Success!"<<endl<<"Read: ";
@@ -196,7 +197,7 @@ void HTMLParse ( string & htmlResponse, vector<string> & imgurls, const string &
 //			}
 			
 			dispurl(surl, host);
-			if( visitedUrl.find( surl ) == visitedUrl.end() ){
+			if( !visitedUrl.count( surl )  ){
 				visitedUrl.insert( surl );
 				ofile << surl<<endl;
 				cout<<"    To - "<<surl<<endl; 
@@ -282,16 +283,17 @@ void DownLoadImg( vector<string> & imgurls, string url ){
 			continue;
 		else{
 			string ext = str.substr( pos+1, str.size()-pos-1 );
-			if( ext!="bmp"&& ext!="jpg" && ext!="jpeg"&& ext!="gif"&&ext!="png"&&ext!="swf")
-				continue;
+//			if( ext!="bmp"&& ext!="jpg" && ext!="jpeg"&& ext!="gif"&&ext!="png"&&ext!="swf")
+//				continue;
 		}
 		//下载其中的内容
 		cout<<"    ";
 		if( GetHttpResponse(imgurls[i], image, byteRead, 0)){
 //			cout<<" O(∩_∩)O 下载了第"<<g_ImgCnt++<<"张图片"<<endl; 
 			
-			
+			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_INTENSITY |FOREGROUND_GREEN);
 			cout<<"O(∩_∩)O Downloaded ("<<g_ImgCnt++<<") - "<<imgurls[i]<<endl; 
+			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_INTENSITY );
 			if ( strlen(image) ==0 ) {
 				continue;
 			}
@@ -314,8 +316,10 @@ void DownLoadImg( vector<string> & imgurls, string url ){
 			free(image);
 //			return; // ！！！这会导致你至下一张。测试。 
 		}else {
+			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_INTENSITY |FOREGROUND_RED);
 			cout<<" - "<<imgurls[i]<<endl; 
-			system("pause");
+			SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_INTENSITY);
+//			system("pause");
 		}
 	}
 //	cout<<"下载完成"<<endl; 
@@ -340,7 +344,13 @@ void BFS(  string  url ){
 		return; 
 	}
 	if( !GetHttpResponse( url, response, bytes, 1 ) ){
-		cout << "No Response."<<endl;
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_INTENSITY |FOREGROUND_RED);
+//cout<<"Hello"<<endl;
+//SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_INTENSITY |
+//FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+//cout<<"World"<<endl;
+		cout << "No Response: "<<url<<endl;
+		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_INTENSITY );
 		return;
 	}
 	string httpResponse=response;
@@ -362,10 +372,12 @@ void BFS(  string  url ){
  
 int main()
 {
-	cout<<"Input shortname, midname, host, url. The last char musnt't be '/'."<<endl;
+	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_INTENSITY );
+	
+	cout<<"Input shortname, midname, url. The last char musnt't be '/'."<<endl;
 	
 //	cout<<"例: google google.com http://www.google.com //www.google.com/s?w=\"myjs\""<<endl; 
-	cin >> shortname >> midname >> urlhost >> urlStart;
+	cin >> shortname >> midname  >> urlStart;
 	//初始化socket，用于tcp网络连接
     WSADATA wsaData;
     if( WSAStartup(MAKEWORD(2,2), &wsaData) != 0 ){
