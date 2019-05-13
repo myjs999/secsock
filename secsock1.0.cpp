@@ -1,3 +1,4 @@
+    
 //#include <Windows.h>
 #include <string>
 #include <iostream>
@@ -66,12 +67,12 @@ bool GetHttpResponse( string url, char * &response, int &bytesRead , int prt){
 		for(int i = 5; i < url.length(); i++) tmp += url[i];
 		url = tmp; 
 	}
-	if(prt) cout<<"试图连接 - "<<url<<" ";
+	if(prt) cout<<"Linking - "<<url<<" ";
 //	if(url.back() == 'm' && url[url.length()-2] == 'o') url += '/'; 
 	string host, resource;
 	if(prt && ParseURL(url+"/", host, resource)) url += "/";
 	if(!ParseURL( url, host, resource )){
-		cout << "错误！不能解析URL"<<endl;//:"<<url<<endl;
+		cout << "Error: URL Parsing Error"<<endl;//:"<<url<<endl;
 		if(prt) system("pause");
 		return false;
 	}
@@ -79,7 +80,7 @@ bool GetHttpResponse( string url, char * &response, int &bytesRead , int prt){
 	//建立socket
 	struct hostent * hp= gethostbyname( host.c_str() );
 	if( hp==NULL ){
-		cout<< "错误！找不到主机位置"<<endl;//:"<<url<<endl;
+		cout<< "Error: No Such Host"<<endl;//:"<<url<<endl;
 		if(prt) system("pause");
 		return false;
 	}
@@ -118,7 +119,7 @@ bool GetHttpResponse( string url, char * &response, int &bytesRead , int prt){
 		if(prt) system("pause");
 		return false;
 	}
-	if(prt) cout <<"成功"<<endl<<"端口：";
+	if(prt) cout <<"Success!"<<endl<<"Read: ";
 	
 	//接收数据
 	int m_nContentLength = DEFAULT_PAGE_BUF_SIZE;
@@ -152,12 +153,19 @@ bool GetHttpResponse( string url, char * &response, int &bytesRead , int prt){
 	//cout<< response <<endl;
 }
 
-inline void dispurl(string& s) {
-	while(s[0] == '.') s.erase(s.begin());
-	if(s[0] != 'h' || s[1] != 't' || s[2] != 't') {
-		if(s[0] != '/') s = "/" + s;
-		s = urlhost + s;
+inline void dispurl(string& s, string host) {
+	if(s[0] == 'h' && s[1] == 't' && s[2] == 't');
+	else if(s[0] == '/' && s[1] == '/') {
+		s = "http:" + s;
 	}
+	else{
+		s = host + '/' + s;
+	}
+//	while(s[0] == '.') s.erase(s.begin());
+//	if(s[0] != 'h' || s[1] != 't' || s[2] != 't') {
+//		if(s[0] != '/') s = "/" + s;
+//		s = urlhost + s;
+//	}
 	if(s[4] == 's') {
 		string tmp;
 		for(int i = 0; i < 4; i++) tmp += s[i];
@@ -168,7 +176,7 @@ inline void dispurl(string& s) {
  
 //提取所有的URL以及图片URL
 void HTMLParse ( string & htmlResponse, vector<string> & imgurls, const string & host ){
-	cout<<"    正在解析"<<endl;// - "<<host<<endl;
+	cout<<"    Parsing..."<<endl;// - "<<host<<endl;
 	//找所有连接，加入queue中
 	const char *p= htmlResponse.c_str();
 	char *tag="href=\"";
@@ -186,11 +194,12 @@ void HTMLParse ( string & htmlResponse, vector<string> & imgurls, const string &
 //			if(surl[0] == '.') {
 //				surl[0] = '/';
 //			}
-			dispurl(surl);
+			
+			dispurl(surl, host);
 			if( visitedUrl.find( surl ) == visitedUrl.end() ){
 				visitedUrl.insert( surl );
 				ofile << surl<<endl;
-				cout<<"    指向 - "<<surl<<endl; 
+				cout<<"    To - "<<surl<<endl; 
 				hrefUrl.push( surl );
 			}
 			pos = strstr(pos, tag );
@@ -254,7 +263,7 @@ string ToFileName( const string &url ){
 //下载图片到img文件夹
 void DownLoadImg( vector<string> & imgurls, string url ){
 //	url = "http:" +url; 
-	cout<<"    正在下载图片"<<endl;// - "<<url<<endl; 
+	cout<<"    Downloading..."<<endl;// - "<<url<<endl; 
 	//生成保存该url下图片的文件夹
 	string foldname = ToFileName( url );
 	foldname = "./img"+shortname+"/"+foldname;
@@ -266,7 +275,7 @@ void DownLoadImg( vector<string> & imgurls, string url ){
 	int byteRead;
 	for( int i=0; i<imgurls.size(); i++){
 		//判断是否为图片，bmp，jgp，jpeg，gif 
-		dispurl(imgurls[i]);
+		dispurl(imgurls[i], url);
 		string str = imgurls[i];
 		int pos = str.find_last_of(".");
 		if( pos == string::npos )
@@ -279,10 +288,10 @@ void DownLoadImg( vector<string> & imgurls, string url ){
 		//下载其中的内容
 		cout<<"    ";
 		if( GetHttpResponse(imgurls[i], image, byteRead, 0)){
-			cout<<" O(∩_∩)O 下载了第"<<g_ImgCnt++<<"张图片"<<endl; 
+//			cout<<" O(∩_∩)O 下载了第"<<g_ImgCnt++<<"张图片"<<endl; 
 			
 			
-//			cout<<"O(∩_∩)O下载 - "<<imgurls[i]<<endl; 
+			cout<<"O(∩_∩)O Downloaded ("<<g_ImgCnt++<<") - "<<imgurls[i]<<endl; 
 			if ( strlen(image) ==0 ) {
 				continue;
 			}
@@ -303,7 +312,7 @@ void DownLoadImg( vector<string> & imgurls, string url ){
 				ofile.close();
 			}
 			free(image);
-			return; // ！！！这会导致你至下一张。测试。 
+//			return; // ！！！这会导致你至下一张。测试。 
 		}else {
 			cout<<" - "<<imgurls[i]<<endl; 
 			system("pause");
@@ -327,11 +336,11 @@ void BFS(  string  url ){
 		url = tmp; 
 	}
 	if(!myfindstr(url, midname)) {
-		cout<<"已离开主站"<<endl;
+		cout<<"Out of Host"<<endl;
 		return; 
 	}
 	if( !GetHttpResponse( url, response, bytes, 1 ) ){
-		cout << "网页无响应"<<endl;
+		cout << "No Response."<<endl;
 		return;
 	}
 	string httpResponse=response;
@@ -353,7 +362,7 @@ void BFS(  string  url ){
  
 int main()
 {
-	cout<<"输入shortname、midname、host、url，不要以斜杠结束"<<endl;
+	cout<<"Input shortname, midname, host, url. The last char musnt't be '/'."<<endl;
 	
 //	cout<<"例: google google.com http://www.google.com //www.google.com/s?w=\"myjs\""<<endl; 
 	cin >> shortname >> midname >> urlhost >> urlStart;
@@ -383,14 +392,14 @@ int main()
  
 	while( hrefUrl.size()!=0 ){
 		string url = hrefUrl.front();  // 从队列的最开始取出一个网址
-		cout<<"剩余"<< hrefUrl.size()<<"个网址在队列中"<<endl; 
+		cout<<"Remaining "<< hrefUrl.size()<<"webs in queue"<<endl; 
 //		cout << "队列首"<<url << endl;
 		BFS( url );					  // 遍历提取出来的那个网页，找它里面的超链接网页放入hrefUrl，下载它里面的文本，图片
 		hrefUrl.pop();                 // 遍历完之后，删除这个网址
 //		cout<<"出队"<<endl;
 	}
     WSACleanup();
-    cout<<"爬取完毕"<<endl;
+    cout<<"Finish."<<endl;
 	system("pause"); 
     return 0;
 }
