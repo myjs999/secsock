@@ -129,9 +129,11 @@ bool GetHttpResponse( string url, char * &response, int &bytesRead , int prt){
  
     bytesRead = 0;
 	int ret = 1;
+	int tim = time(0);
     while(ret > 0){
+    	cerr<<".";
         ret = recv(sock, pageBuf + bytesRead, m_nContentLength - bytesRead, 0);
-        
+        cerr<<".";
         if(ret > 0)
         {
             bytesRead += ret;
@@ -143,6 +145,12 @@ bool GetHttpResponse( string url, char * &response, int &bytesRead , int prt){
 			pageBuf = (char*)realloc( pageBuf, m_nContentLength);       //重新分配内存
 		}
 		if(prt) cout << ret <<" ";
+        if(time(0) > tim + 1) {
+        	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_INTENSITY |FOREGROUND_RED|FOREGROUND_GREEN);
+        	cerr<<"Time out"<<endl;
+			 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_INTENSITY);
+			 break;
+		}
     }
 	if(prt) cout <<endl;
  
@@ -160,7 +168,8 @@ inline void dispurl(string& s, string host) {
 		s = "http:" + s;
 	}
 	else{
-		s = host + '/' + s;
+		if(s[0] != '/') s = '/' + s;
+		s = urlhost + s;
 	}
 //	while(s[0] == '.') s.erase(s.begin());
 //	if(s[0] != 'h' || s[1] != 't' || s[2] != 't') {
@@ -183,6 +192,7 @@ void HTMLParse ( string & htmlResponse, vector<string> & imgurls, const string &
 	char *tag="href=\"";
 	const char *pos = strstr( p, tag );
 	ofstream ofile("url.txt", ios::app);
+	int cnt = 0;
 	while( pos ){
 		pos +=strlen(tag);
 		const char * nextQ = strstr( pos, "\"" );
@@ -201,6 +211,7 @@ void HTMLParse ( string & htmlResponse, vector<string> & imgurls, const string &
 				visitedUrl.insert( surl );
 				ofile << surl<<endl;
 				cout<<"    To - "<<surl<<endl; 
+		if(++cnt > 5) break;  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!JUSTFORTESTING. REMOVEING
 				hrefUrl.push( surl );
 			}
 			pos = strstr(pos, tag );
@@ -374,10 +385,10 @@ int main()
 {
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_INTENSITY );
 	
-	cout<<"Input shortname, midname, url. The last char musnt't be '/'."<<endl;
+	cout<<"Input shortname, midname, host, url. The last char musnt't be '/'."<<endl;
 	
 //	cout<<"例: google google.com http://www.google.com //www.google.com/s?w=\"myjs\""<<endl; 
-	cin >> shortname >> midname  >> urlStart;
+	cin >> shortname >> midname  >> urlhost >> urlStart;
 	//初始化socket，用于tcp网络连接
     WSADATA wsaData;
     if( WSAStartup(MAKEWORD(2,2), &wsaData) != 0 ){
