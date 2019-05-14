@@ -145,12 +145,12 @@ bool GetHttpResponse( string url, char * &response, int &bytesRead , int prt){
 			pageBuf = (char*)realloc( pageBuf, m_nContentLength);       //重新分配内存
 		}
 		if(prt) cout << ret <<" ";
-        if(time(0) > tim + 1) {
-        	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_INTENSITY |FOREGROUND_RED|FOREGROUND_GREEN);
-        	cerr<<"Time out"<<endl;
-			 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_INTENSITY);
-			 break;
-		}
+//        if(time(0) > tim + 1) {
+//        	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_INTENSITY |FOREGROUND_RED|FOREGROUND_GREEN);
+//        	cerr<<"Time out"<<endl;
+//			 SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_INTENSITY);
+//			 break;
+//		}
     }
 	if(prt) cout <<endl;
  
@@ -168,8 +168,8 @@ inline void dispurl(string& s, string host) {
 		s = "http:" + s;
 	}
 	else{
-		if(s[0] != '/') s = '/' + s;
-		s = urlhost + s;
+		if(s[0] != '/') s = host + s;
+		else s = urlhost + s;
 	}
 //	while(s[0] == '.') s.erase(s.begin());
 //	if(s[0] != 'h' || s[1] != 't' || s[2] != 't') {
@@ -182,6 +182,7 @@ inline void dispurl(string& s, string host) {
 		for(int i = 5; i < s.length(); i++) tmp += s[i];
 		s = tmp; 
 	}
+//	if(s.back() != '/') s += "/";
 }
  
 //提取所有的URL以及图片URL
@@ -189,17 +190,17 @@ void HTMLParse ( string & htmlResponse, vector<string> & imgurls, const string &
 	cout<<"    Parsing..."<<endl;// - "<<host<<endl;
 	//找所有连接，加入queue中
 	const char *p= htmlResponse.c_str();
-	char *tag="href=\"";
+	char *tag="href='";
 	const char *pos = strstr( p, tag );
 	ofstream ofile("url.txt", ios::app);
 	int cnt = 0;
 	while( pos ){
 		pos +=strlen(tag);
-		const char * nextQ = strstr( pos, "\"" );
+		const char * nextQ = strstr( pos, "'" );
 		if( nextQ ){
 			char * url = new char[ nextQ-pos+1 ];
 			//char url[100]; //固定大小的会发生缓冲区溢出的危险
-			sscanf( pos, "%[^\"]", url);
+			sscanf( pos, "%[^']", url);
 			string surl = url;  // 转换成string类型，可以自动释放内存
 //			cout<<"original link: "<<surl<<endl;
 //			if(surl[0] == '.') {
@@ -211,7 +212,28 @@ void HTMLParse ( string & htmlResponse, vector<string> & imgurls, const string &
 				visitedUrl.insert( surl );
 				ofile << surl<<endl;
 				cout<<"    To - "<<surl<<endl; 
-		if(++cnt > 5) break;  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!JUSTFORTESTING. REMOVEING
+//		if(++cnt > 5) break;  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!JUSTFORTESTING. REMOVEING
+				hrefUrl.push( surl );
+			}
+			pos = strstr(pos, tag );
+			delete [] url;  // 释放掉申请的内存
+		}
+	}
+	tag = "href=\"";
+	pos = strstr(p, tag);
+	while( pos ){
+		pos +=strlen(tag);
+		const char * nextQ = strstr( pos, "\"" );
+		if( nextQ ){
+			char * url = new char[ nextQ-pos+1 ];
+			sscanf( pos, "%[^\"]", url);
+			string surl = url;  // 转换成string类型，可以自动释放内存
+//			cout<<"original link: "<<surl<<endl;
+			dispurl(surl, host);
+			if( !visitedUrl.count( surl )  ){
+				visitedUrl.insert( surl );
+				ofile << surl<<endl;
+				cout<<"    To - "<<surl<<endl; 
 				hrefUrl.push( surl );
 			}
 			pos = strstr(pos, tag );
@@ -354,6 +376,7 @@ void BFS(  string  url ){
 		cout<<"Out of Host"<<endl;
 		return; 
 	}
+//	if(url.back() != '/') url += "/";
 	if( !GetHttpResponse( url, response, bytes, 1 ) ){
 		SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE),FOREGROUND_INTENSITY |FOREGROUND_RED);
 //cout<<"Hello"<<endl;
